@@ -1,40 +1,67 @@
 import 'package:flutter/material.dart';
-import 'network_scanner.dart';
+import 'cisco_command.dart';
 
 void main() {
-  runApp(NetworkMonitorApp());
+  runApp(CiscoApp());
 }
 
-class NetworkMonitorApp extends StatelessWidget {
+class CiscoApp extends StatelessWidget {
+  const CiscoApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Network Monitor',
-      home: NetworkMonitorScreen(),
+      title: 'Cisco Device Commander',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: CiscoCommandScreen(),
     );
   }
 }
 
-class NetworkMonitorScreen extends StatefulWidget {
+class CiscoCommandScreen extends StatefulWidget {
+  const CiscoCommandScreen({super.key});
+
   @override
-  _NetworkMonitorScreenState createState() => _NetworkMonitorScreenState();
+  _CiscoCommandScreenState createState() => _CiscoCommandScreenState();
 }
 
-class _NetworkMonitorScreenState extends State<NetworkMonitorScreen> {
-  final NetworkScanner _networkScanner = NetworkScanner();
-  List<String> _devices = [];
-  bool _isScanning = false;
+class _CiscoCommandScreenState extends State<CiscoCommandScreen> {
+  final _ipController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _commandController = TextEditingController();
 
-  Future<void> _scanNetwork() async {
+  String _output = '';
+  bool _isExecuting = false;
+
+  Future<void> _sendCommand() async {
+    final ip = _ipController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+    final command = _commandController.text.trim();
+
+    if (ip.isEmpty || username.isEmpty || password.isEmpty || command.isEmpty) {
+      setState(() {
+        _output = 'Please fill in all fields.';
+      });
+      return;
+    }
+
+    final CiscoController ciscoController = CiscoController(
+      host: ip,
+      username: username,
+      password: password,
+    );
+
     setState(() {
-      _isScanning = true;
-      _devices = [];
+      _isExecuting = true;
+      _output = 'Executing...';
     });
 
-    final devices = await _networkScanner.scanDevices();
+    final result = await ciscoController.runCommand(command);
     setState(() {
-      _devices = devices;
-      _isScanning = false;
+      _output = result;
+      _isExecuting = false;
     });
   }
 
@@ -42,27 +69,60 @@ class _NetworkMonitorScreenState extends State<NetworkMonitorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Network Monitor'),
+        title: const Text('Cisco Command Interface'),
       ),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: _isScanning ? null : _scanNetwork,
-            child: _isScanning ? Text('Scanning...') : Text('Scan Network'),
-          ),
-          Expanded(
-            child: _devices.isEmpty
-                ? Center(child: Text('No devices found'))
-                : ListView.builder(
-                    itemCount: _devices.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_devices[index]),
-                      );
-                    },
-                  ),
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _ipController,
+              decoration: const InputDecoration(
+                labelText: 'IP Address',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _commandController,
+              decoration: const InputDecoration(
+                labelText: 'Enter Cisco Command',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _isExecuting ? null : _sendCommand,
+              child: Text(_isExecuting ? 'Executing...' : 'Send Command'),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  _output,
+                  style: const TextStyle(fontFamily: 'Courier'),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
