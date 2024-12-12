@@ -1,25 +1,14 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-import 'screens/product_details_screen.dart';
 
 void main() {
-  runApp(ECommerceApp());
-}
-
-class ECommerceApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'E-Commerce App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Arial',
+  var app = MaterialApp(
+    title: 'My App',
+    home: Scaffold(
+      appBar: AppBar(
+        title: Text('Hello World'),
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (ctx) => HomeScreen(),
-        ProductDetailsScreen.routeName: (ctx) => ProductDetailsScreen(),
-      },
+      body: Text("แสดงข้อความ Body"),
+      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
     );
-  }
-}
+  runApp(app);
